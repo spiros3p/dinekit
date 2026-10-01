@@ -362,7 +362,7 @@ function feedback_page_url() {
  * @return bool|\WP_Error
  */
 function send_request( $booking_id ) {
-	require_once DINEKIT_DIR . 'includes/bookings/emails.php';
+	require_once DINEKIT_DIR . 'includes/emails.php';
 	$cfg   = get();
 	$email = (string) get_post_meta( $booking_id, 'dinekit_email', true );
 	$name  = (string) get_post_meta( $booking_id, 'dinekit_name', true );
@@ -388,7 +388,9 @@ function send_request( $booking_id ) {
 
 	/* translators: %s: site name. */
 	$subject = sprintf( __( 'How was your visit to %s?', 'dinekit' ), $site );
-	\DineKit\Bookings\Emails\send( $email, $subject, $html );
+	if ( ! \DineKit\Emails\send( $email, $subject, $html ) ) {
+		return new \WP_Error( 'dinekit_review_send', __( 'The email could not be sent.', 'dinekit' ), array( 'status' => 500 ) );
+	}
 
 	update_post_meta( $booking_id, 'dinekit_review_sent', (string) time() );
 	return true;
@@ -491,7 +493,7 @@ function public_submit( $request ) {
  * @return void
  */
 function alert_manager( $booking_id, $rating, $comment ) {
-	require_once DINEKIT_DIR . 'includes/bookings/emails.php';
+	require_once DINEKIT_DIR . 'includes/emails.php';
 	$cfg  = get();
 	$to   = ! empty( $cfg['notify_email'] ) && is_email( $cfg['notify_email'] ) ? $cfg['notify_email'] : (string) get_option( 'admin_email' );
 	$name = (string) get_post_meta( $booking_id, 'dinekit_name', true );
@@ -508,7 +510,7 @@ function alert_manager( $booking_id, $rating, $comment ) {
 	$html .= '<p style="font-size:13px;color:#64748b;margin:16px 0 0">' . esc_html__( 'Reach out and make it right — a quick recovery often wins the guest back.', 'dinekit' ) . '</p>';
 	$html .= '</div>';
 
-	\DineKit\Bookings\Emails\send( $to, __( 'Low guest feedback — please follow up', 'dinekit' ), $html );
+	\DineKit\Emails\send( $to, __( 'Low guest feedback — please follow up', 'dinekit' ), $html );
 }
 
 /**
